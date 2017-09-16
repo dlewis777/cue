@@ -1,0 +1,2 @@
+# cue
+Automatic Slide Changing
