@@ -33,6 +33,7 @@ import easygui
 import win32gui
 import pywinauto
 
+from time import sleep
 from google.cloud import speech
 from google.cloud.speech import enums
 from google.cloud.speech import types
@@ -44,6 +45,21 @@ from six.moves import queue
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
 
+backdict = {
+    'zero': 0,
+    'one': 1,
+    'two': 2,
+    'three': 3,
+    'four': 4,
+    'five': 5,
+    'six': 6,
+    'seven': 7,
+    'eight': 8,
+    'nine': 9,
+    'ten': 10
+}
+
+ilist = [1,2,3,4,5,6,7,8,9,10]
 
 class MicrophoneStream(object):
     """Opens a recording stream as a generator yielding the audio chunks."""
@@ -142,13 +158,34 @@ def listen_for_cue(responses, cues, mode):
             sys.stdout.flush()
 
             num_chars_printed = len(transcript)
-            
+
         else:
             print(transcript + overwrite_chars)
 
-            # Exit recognition if any of the transcribed phrases could be
-            # one of our keywords.
-            if mode is 'Advanced':
+            if 'back' in transcript:
+                print('LA')
+                for x in range(len(transcript.split(' '))):
+                    print(x)
+                    print(transcript.split(' ')[x])
+                    if 'back' == str(transcript.split(' ')[x]):
+                        print('HERE')
+                        if x < (len(transcript.split(' ')) - 1):
+                            print('THERE')
+                            
+                            if transcript.split(' ')[x+1] in backdict:
+                                print('DONE2')
+                                for y in range(int(backdict[transcript.split(' ')[x+1]])):
+                                    pyautogui.hotkey('left')
+                                    print('left')
+                                break              
+                            elif int(transcript.split(' ')[x+1]) in ilist:
+                                print('DONE') 
+                                for y in range(int(transcript.split(' ')[x+1])):
+                                    pyautogui.hotkey('left')
+                                    print('left')
+                                    sleep(.1)
+                                break    
+            elif mode is 'Advanced':
                 if cues[curindex].lower() in transcript:
                     pyautogui.hotkey('right')
                     if curindex == (len(cues) - 1):
@@ -161,13 +198,13 @@ def listen_for_cue(responses, cues, mode):
                         pyautogui.hotkey('right')
                         break
 
+
 def choose_mode():
 
     msg = "Choose which mode to run in. Simple lets you use any of the words to change. Advanced gives you finer control."
     title = "Cue"
     choices = ['Simple', 'Advanced']
     mode = easygui.buttonbox(msg, title, choices)
-    print(mode)
     return mode
 def get_word_list(mode):
     if mode is 'Advanced':
@@ -175,14 +212,12 @@ def get_word_list(mode):
         title = "Cue"
         slidenum = easygui.integerbox(msg, title)
 
-        print(slidenum)
         msg2 = "Enter transition phrase for each slide"
         fieldNames = []
         for x in range(int(slidenum)):
             fieldNames.append("Slide " + str(x))
         fieldValues = []
         fieldValues = easygui.multenterbox(msg2, title, fieldNames)
-        print(fieldValues)
 
         return fieldValues
     elif mode is 'Simple':
@@ -190,7 +225,7 @@ def get_word_list(mode):
         title = "Cue"
         fieldValue = easygui.enterbox(msg,title)
         return fieldValue.split(' ')
-        
+
 def launchppt():
 
     msg = "Enter whole or part of the file name you wish to use"
@@ -199,13 +234,10 @@ def launchppt():
     title = "Cue"
     fieldValue = easygui.multenterbox(msg, title, fieldname)
     app = pywinauto.application.Application()
-    print(pywinauto.findwindows.enum_windows())
     for window in pywinauto.findwindows.enum_windows():
         temp = win32gui.GetWindowText(window)
         if fieldValue[0] in str(temp):
-            print(temp)
             handle = pywinauto.findwindows.find_windows(title=temp, class_name=win32gui.GetClassName(window))[0]
-            print(handle)
             win32gui.SetForegroundWindow(handle)
             pyautogui.hotkey('f5')
 
