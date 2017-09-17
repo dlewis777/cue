@@ -112,7 +112,7 @@ class MicrophoneStream(object):
 
 
 
-def listen_for_cue(responses, cues):
+def listen_for_cue(responses, cues, mode):
     curindex = 0
     print(cues[curindex])
     num_chars_printed = 0
@@ -142,35 +142,55 @@ def listen_for_cue(responses, cues):
             sys.stdout.flush()
 
             num_chars_printed = len(transcript)
-
+            
         else:
             print(transcript + overwrite_chars)
 
             # Exit recognition if any of the transcribed phrases could be
             # one of our keywords.
+            if mode is 'Advanced':
+                if cues[curindex].lower() in transcript:
+                    pyautogui.hotkey('right')
+                    if curindex == (len(cues) - 1):
+                        break
+                    curindex += 1
+                num_chars_printed = 0
+            elif mode is 'Simple':
+                for element in cues:
+                    if element.lower() in transcript:
+                        pyautogui.hotkey('right')
+                        break
 
-            if cues[curindex].lower() in transcript:
-                pyautogui.hotkey('right')
-                if curindex == (len(cues) - 1):
-                    break
-                curindex += 1
-            num_chars_printed = 0
+def choose_mode():
 
-def get_word_list():
-    msg = "Enter the number of slides"
+    msg = "Choose which mode to run in. Simple lets you use any of the words to change. Advanced gives you finer control."
     title = "Cue"
-    slidenum = easygui.integerbox(msg, title)
+    choices = ['Simple', 'Advanced']
+    mode = easygui.buttonbox(msg, title, choices)
+    print(mode)
+    return mode
+def get_word_list(mode):
+    if mode is 'Advanced':
+        msg = "Enter the number of slides"
+        title = "Cue"
+        slidenum = easygui.integerbox(msg, title)
 
-    print(slidenum)
-    msg2 = "Enter transition phrase for each slide"
-    fieldNames = []
-    for x in range(int(slidenum)):
-        fieldNames.append("Slide " + str(x))
-    fieldValues = []
-    fieldValues = easygui.multenterbox(msg2, title, fieldNames)
-    print(fieldValues)
+        print(slidenum)
+        msg2 = "Enter transition phrase for each slide"
+        fieldNames = []
+        for x in range(int(slidenum)):
+            fieldNames.append("Slide " + str(x))
+        fieldValues = []
+        fieldValues = easygui.multenterbox(msg2, title, fieldNames)
+        print(fieldValues)
 
-    return fieldValues
+        return fieldValues
+    elif mode is 'Simple':
+        msg = "Enter words to change slides separated by spaces"
+        title = "Cue"
+        fieldValue = easygui.enterbox(msg,title)
+        return fieldValue.split(' ')
+        
 def launchppt():
 
     msg = "Enter whole or part of the file name you wish to use"
@@ -192,8 +212,9 @@ def launchppt():
 
 def main():
     
+    mode = choose_mode()
     #WORD LIST
-    cues = get_word_list()
+    cues = get_word_list(mode)
     launchppt() 
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
@@ -216,7 +237,7 @@ def main():
         responses = client.streaming_recognize(streaming_config, requests)
 
        
-        listen_for_cue(responses, cues)
+        listen_for_cue(responses, cues, mode)
 
 if __name__ == '__main__':
     main()
